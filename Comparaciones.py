@@ -1,64 +1,36 @@
 import streamlit as st
 import pandas as pd
+import openpyxl
 
-def comparar_columnas(col_a, col_b, title_a, title_b):
-    lista_a = col_a.strip().split('\n')
-    lista_b = col_b.strip().split('\n')
-    
-    solo_a = []
-    solo_b = []
-    coincidencias = []
-    for elemento in lista_a:
-        if elemento not in lista_b:
-            solo_a.append(elemento)
-        else:
-            coincidencias.append(elemento)
-    for elemento in lista_b:
-        if elemento not in lista_a:
-            solo_b.append(elemento)
-    
-    df_solo_a = pd.DataFrame({'Solo en A': solo_a})
-    df_solo_b = pd.DataFrame({'Solo en B': solo_b})
-    df_coincidencias = pd.DataFrame({
-        title_a: coincidencias,
-        title_b: coincidencias
-    })
-    
-    return df_solo_a, df_solo_b, df_coincidencias
+st.set_page_config(page_title="Comparacion de C/ elemento de las columnas")
 
-st.title('Comparación de Columnas')
-st.write('Ingrese los datos de las columnas')
+st.header("Comparacion de C/ elemento de las columnas")
 
-# Columna 1
-st.subheader('Columna 1')
-title_a = st.text_input('Ingrese el título de la columna 1', 'Columna 1')
-col_a = st.text_area('Ingrese los valores de la columna 1')
+tabla1 = st.file_uploader("Cargar tabla 1", type=["csv", "xlsx"])
+if tabla1 is not None:
+    tabla1 = pd.read_csv(tabla1) if tabla1.name.endswith('.csv') else pd.read_excel(tabla1, engine='openpyxl')
 
-# Columna 2
-st.subheader('Columna 2')
-title_b = st.text_input('Ingrese el título de la columna 2', 'Columna 2')
-col_b = st.text_area('Ingrese los valores de la columna 2')
+tabla2 = st.file_uploader("Cargar tabla 2", type=["csv", "xlsx"])
+if tabla2 is not None:
+    tabla2 = pd.read_csv(tabla2) if tabla2.name.endswith('.csv') else pd.read_excel(tabla2, engine='openpyxl')
 
-# Botón para iniciar la comparación
-if st.button('Iniciar Comparación'):
-    df_solo_a, df_solo_b, df_coincidencias = comparar_columnas(col_a, col_b, title_a, title_b)
-    
-    # Descarga de archivo en formato Excel
-    output = pd.ExcelWriter('comparacion_columnas.xlsx')
-    df_solo_a.to_excel(output, sheet_name='Solo en A', index=False)
-    df_solo_b.to_excel(output, sheet_name='Solo en B', index=False)
-    df_coincidencias.to_excel(output, sheet_name='Coincidencias', index=False)
-    output.save()
-    
-    st.write('Comparación realizada con éxito.')
-    
-    # Botón para descargar archivo
-    if st.button('Descargar archivo Excel'):
-        with open('comparacion_columnas.xlsx', 'rb') as f:
-            bytes_data = f.read()
-        st.download_button(
-            label='Descargar archivo',
-            data=bytes_data,
-            file_name='comparacion_columnas.xlsx',
-            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
+columna1 = st.selectbox("Seleccionar columna de tabla 1", tabla1.columns.tolist() if tabla1 is not None else [])
+columna2 = st.selectbox("Seleccionar columna de tabla 2", tabla2.columns.tolist() if tabla2 is not None else [])
+
+if st.button("Iniciar Comparacion") and tabla1 is not None and tabla2 is not None and columna1 and columna2:
+    tabla1[columna1] = tabla1[columna1].astype(object)
+    tabla2[columna2] = tabla2[columna2].astype(object)
+
+    tabla1[columna1] = tabla1[columna1].apply(lambda x: str(x).lower())
+    tabla2[columna2] = tabla2[columna2].apply(lambda x: str(x).lower())
+
+    lista_a = tabla1[columna1].tolist()
+    lista_b = tabla2[columna2].tolist()
+
+    solo_a = [x for x in lista_a if x not in lista_b]
+    solo_b = [x for x in lista_b if x not in lista_a]
+    coincidencias = [x for x in lista_a if x in lista_b]
+
+    output = pd.ExcelWriter('comparacion_columnas.xlsx', engine='openpyxl')
+    tabla1.to_excel(output, sheet_name='Input Tablas', index=False)
+    tabla2.to_excel
