@@ -1,42 +1,45 @@
 import streamlit as st
 import pandas as pd
 import openpyxl as px
-st.set_page_config(page_title="Comparación de columnas", page_icon=":guardsman:")
 
 # Título de la página
-st.title("Comparación de columnas")
+st.title("Comparar elementos de dos columnas")
 
-# Texto para ingresar los títulos de las columnas
-col1_title = st.text_input("Título de la columna 1", "Columna 1")
-col2_title = st.text_input("Título de la columna 2", "Columna 2")
+# Ingreso de los títulos de las columnas
+titulo_columna_1 = st.text_input("Ingrese el título de la columna 1:")
+titulo_columna_2 = st.text_input("Ingrese el título de la columna 2:")
 
-# Texto para ingresar las columnas de cadenas de caracteres
-col1_input = st.text_area(f"Ingrese los valores para {col1_title}")
-col2_input = st.text_area(f"Ingrese los valores para {col2_title}")
+# Ingreso de las columnas de datos
+columna_1 = st.text_area("Ingrese la columna 1 (separe los elementos con salto de línea):")
+columna_2 = st.text_area("Ingrese la columna 2 (separe los elementos con salto de línea):")
 
-# Botón para comparar
-if st.button("Comparar"):
-    # Separar los valores de cada columna por líneas y convertirlos en listas
-    col1_values = col1_input.split("\n")
-    col2_values = col2_input.split("\n")
+# Dividir las cadenas de entrada en listas
+lista_1 = [x.strip() for x in columna_1.split('\n') if x.strip()]
+lista_2 = [x.strip() for x in columna_2.split('\n') if x.strip()]
 
-    # Crear un dataframe con las columnas
-    df = pd.DataFrame({col1_title: col1_values, col2_title: col2_values})
+# Comparación de las listas
+solo_en_a = sorted(set(lista_1) - set(lista_2))
+solo_en_b = sorted(set(lista_2) - set(lista_1))
+coincidencias = sorted(set(lista_1) & set(lista_2))
 
-    # Comparar las columnas y crear una tercera columna con los resultados
-    df["Resultados"] = df.apply(lambda x: "Coincidencia" if x[col1_title] == x[col2_title] else "Solo en " + col1_title if x[col1_title] not in col2_values else "Solo en " + col2_title if x[col2_title] not in col1_values else "", axis=1)
+# Visualización de los resultados
+st.write("Resultado:")
+df_resultado = pd.DataFrame({
+    f"Solo en {titulo_columna_1}": solo_en_a,
+    f"Solo en {titulo_columna_2}": solo_en_b,
+    "Coincidencias": coincidencias
+})
+st.write(df_resultado)
 
-    # Crear un archivo Excel con dos hojas: la primera con el input y la segunda con el output
-    output = pd.ExcelWriter("comparacion_columnas.xlsx")
-    df.to_excel(output, sheet_name="Input", index=False)
-    df["Resultados"].value_counts().to_frame().to_excel(output, sheet_name="Output")
-    output.save()
-
-    # Descargar el archivo Excel
-    st.download_button(
-        label="Descargar resultados",
-        data=output,
-        file_name="comparacion_columnas.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+# Descargar en excel
+output = pd.ExcelWriter('comparacion_columnas.xlsx')
+df_input = pd.DataFrame({
+    titulo_columna_1: lista_1,
+    titulo_columna_2: lista_2
+})
+df_input.to_excel(output, sheet_name='Input', index=False)
+df_resultado.to_excel(output, sheet_name='Output', index=False)
+output.save()
+button = '<a href="comparacion_columnas.xlsx" download="comparacion_columnas.xlsx">Descargar resultado en Excel</a>'
+st.markdown(button, unsafe_allow_html=True)
 
