@@ -1,53 +1,43 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import openpyxl
 
-# función para comparar elementos
-def comparar_elementos(columna_a, columna_b):
-    solo_en_a = []
-    solo_en_b = []
-    coincidencias = []
-    for a in columna_a:
-        if a not in columna_b:
-            solo_en_a.append(a)
-    for b in columna_b:
-        if b not in columna_a:
-            solo_en_b.append(b)
-        else:
-            coincidencias.append(b)
-    return solo_en_a, solo_en_b, coincidencias
+st.set_page_config(page_title="Comparación de columnas", page_icon=":guardsman:")
 
-# interfaz de usuario
-st.title("Comparación de C/ elemento de las columnas")
-st.sidebar.title("Elija los nombres de las columnas")
+# Título de la página
+st.title("Comparación de columnas")
 
-# selección de los nombres de las columnas
-nombre_columna_a = st.sidebar.text_input("Nombre de la columna A", "A")
-nombre_columna_b = st.sidebar.text_input("Nombre de la columna B", "B")
+# Texto para ingresar los títulos de las columnas
+col1_title = st.text_input("Título de la columna 1", "Columna 1")
+col2_title = st.text_input("Título de la columna 2", "Columna 2")
 
-# entrada de datos
-texto_a = st.text_area("Introduzca elementos para la columna A, uno por línea")
-texto_b = st.text_area("Introduzca elementos para la columna B, uno por línea")
-separador = st.sidebar.text_input("Separador", ",")
+# Texto para ingresar las columnas de cadenas de caracteres
+col1_input = st.text_area(f"Ingrese los valores para {col1_title}")
+col2_input = st.text_area(f"Ingrese los valores para {col2_title}")
 
-if st.button("Iniciar comparación"):
-    # procesamiento de datos
-    lista_a = [float(x) if '.' in x else int(x) if x.isdigit() else x for x in texto_a.split('\n')]
-    lista_b = [float(x) if '.' in x else int(x) if x.isdigit() else x for x in texto_b.split('\n')]
-    solo_en_a, solo_en_b, coincidencias = comparar_elementos(lista_a, lista_b)
+# Botón para comparar
+if st.button("Comparar"):
+    # Separar los valores de cada columna por líneas y convertirlos en listas
+    col1_values = col1_input.split("\n")
+    col2_values = col2_input.split("\n")
 
-    # salida de datos
-    output = pd.ExcelWriter('comparacion_columnas.xlsx')
-    df_input = pd.DataFrame({nombre_columna_a: lista_a, nombre_columna_b: lista_b})
-    df_input.to_excel(output, sheet_name='Input', index=False)
-    df_output = pd.DataFrame({f"Solo en {nombre_columna_a}": solo_en_a, f"Solo en {nombre_columna_b}": solo_en_b, "Coincidencias": coincidencias})
-    df_output.to_excel(output, sheet_name='Output', index=False)
+    # Crear un dataframe con las columnas
+    df = pd.DataFrame({col1_title: col1_values, col2_title: col2_values})
+
+    # Comparar las columnas y crear una tercera columna con los resultados
+    df["Resultados"] = df.apply(lambda x: "Coincidencia" if x[col1_title] == x[col2_title] else "Solo en " + col1_title if x[col1_title] not in col2_values else "Solo en " + col2_title if x[col2_title] not in col1_values else "", axis=1)
+
+    # Crear un archivo Excel con dos hojas: la primera con el input y la segunda con el output
+    output = pd.ExcelWriter("comparacion_columnas.xlsx")
+    df.to_excel(output, sheet_name="Input", index=False)
+    df["Resultados"].value_counts().to_frame().to_excel(output, sheet_name="Output")
     output.save()
 
-    # descarga de archivo
-    with open('comparacion_columnas.xlsx', 'rb') as f:
-        bytes_data = f.read()
-    b64 = base64.b64encode(bytes_data).decode()
-    href = f'<a href="data:application/octet-stream;base64,{b64}" download="comparacion_columnas.xlsx">Descargar archivo Excel</a>'
-    st.markdown(href, unsafe_allow_html=True)
+    # Descargar el archivo Excel
+    st.download_button(
+        label="Descargar resultados",
+        data=output,
+        file_name="comparacion_columnas.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
