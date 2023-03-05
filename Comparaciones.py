@@ -1,36 +1,53 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import openpyxl
 
-st.set_page_config(page_title="Comparacion de C/ elemento de las columnas")
+# función para comparar elementos
+def comparar_elementos(columna_a, columna_b):
+    solo_en_a = []
+    solo_en_b = []
+    coincidencias = []
+    for a in columna_a:
+        if a not in columna_b:
+            solo_en_a.append(a)
+    for b in columna_b:
+        if b not in columna_a:
+            solo_en_b.append(b)
+        else:
+            coincidencias.append(b)
+    return solo_en_a, solo_en_b, coincidencias
 
-st.header("Comparacion de C/ elemento de las columnas")
+# interfaz de usuario
+st.title("Comparación de C/ elemento de las columnas")
+st.sidebar.title("Elija los nombres de las columnas")
 
-tabla1 = st.file_uploader("Cargar tabla 1", type=["csv", "xlsx"])
-if tabla1 is not None:
-    tabla1 = pd.read_csv(tabla1) if tabla1.name.endswith('.csv') else pd.read_excel(tabla1, engine='openpyxl')
+# selección de los nombres de las columnas
+nombre_columna_a = st.sidebar.text_input("Nombre de la columna A", "A")
+nombre_columna_b = st.sidebar.text_input("Nombre de la columna B", "B")
 
-tabla2 = st.file_uploader("Cargar tabla 2", type=["csv", "xlsx"])
-if tabla2 is not None:
-    tabla2 = pd.read_csv(tabla2) if tabla2.name.endswith('.csv') else pd.read_excel(tabla2, engine='openpyxl')
+# entrada de datos
+texto_a = st.text_area("Introduzca elementos para la columna A, uno por línea")
+texto_b = st.text_area("Introduzca elementos para la columna B, uno por línea")
+separador = st.sidebar.text_input("Separador", ",")
 
-columna1 = st.selectbox("Seleccionar columna de tabla 1", tabla1.columns.tolist() if tabla1 is not None else [])
-columna2 = st.selectbox("Seleccionar columna de tabla 2", tabla2.columns.tolist() if tabla2 is not None else [])
+if st.button("Iniciar comparación"):
+    # procesamiento de datos
+    lista_a = [float(x) if '.' in x else int(x) if x.isdigit() else x for x in texto_a.split('\n')]
+    lista_b = [float(x) if '.' in x else int(x) if x.isdigit() else x for x in texto_b.split('\n')]
+    solo_en_a, solo_en_b, coincidencias = comparar_elementos(lista_a, lista_b)
 
-if st.button("Iniciar Comparacion") and tabla1 is not None and tabla2 is not None and columna1 and columna2:
-    tabla1[columna1] = tabla1[columna1].astype(object)
-    tabla2[columna2] = tabla2[columna2].astype(object)
+    # salida de datos
+    output = pd.ExcelWriter('comparacion_columnas.xlsx')
+    df_input = pd.DataFrame({nombre_columna_a: lista_a, nombre_columna_b: lista_b})
+    df_input.to_excel(output, sheet_name='Input', index=False)
+    df_output = pd.DataFrame({f"Solo en {nombre_columna_a}": solo_en_a, f"Solo en {nombre_columna_b}": solo_en_b, "Coincidencias": coincidencias})
+    df_output.to_excel(output, sheet_name='Output', index=False)
+    output.save()
 
-    tabla1[columna1] = tabla1[columna1].apply(lambda x: str(x).lower())
-    tabla2[columna2] = tabla2[columna2].apply(lambda x: str(x).lower())
-
-    lista_a = tabla1[columna1].tolist()
-    lista_b = tabla2[columna2].tolist()
-
-    solo_a = [x for x in lista_a if x not in lista_b]
-    solo_b = [x for x in lista_b if x not in lista_a]
-    coincidencias = [x for x in lista_a if x in lista_b]
-
-    output = pd.ExcelWriter('comparacion_columnas.xlsx', engine='openpyxl')
-    tabla1.to_excel(output, sheet_name='Input Tablas', index=False)
-    tabla2.to_excel
+    # descarga de archivo
+    with open('comparacion_columnas.xlsx', 'rb') as f:
+        bytes_data = f.read()
+    b64 = base64.b64encode(bytes_data).decode()
+    href = f'<a href="data:application/octet-stream;base64,{b64}" download="comparacion_columnas.xlsx">Descargar archivo Excel</a>'
+    st.markdown(href, unsafe_allow_html=True)
