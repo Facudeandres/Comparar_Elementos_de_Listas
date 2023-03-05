@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import openpyxl
+import openpyxl as px
 
 st.set_page_config(page_title="Comparación de columnas", page_icon=":guardsman:")
 
