@@ -1,57 +1,42 @@
-import streamlit as st
+import  streamlit as st
 import pandas as pd
-import openpyxl as px
+from dataclasses import dataclass
+import openpyxl
 
-# Configuración de la página de Streamlit
-st.set_page_config(page_title="Comparación de elementos de listas", page_icon=":mag:", layout="wide")
+columna1_header = st.text_input ("Ingrese el nombre de la columna 1")
+columna1_data = st.text_area ("Ingrese los datos de la columna 1")
+columna2_header = st.text_input ("Ingrese el nombre de la columna 2")
+columna2_data = st.text_area ("Ingrese los datos de la columna 2")
 
-# Título de la página
-st.title("Comparación de elementos de listas")
+columna1_lista= columna1_data.split(",")
+columna2_lista= columna2_data.split(",")
+df = pd.dataframe({columna1_header:columna1_lista, columna2_header: columna2_lista})
 
-# Ingreso de datos
-st.header("Ingreso de datos")
-st.write("Ingrese los títulos de las columnas y los elementos de las dos listas a comparar.")
+@dataclass
 
-titulo_col1 = st.text_input("Título columna 1")
-titulo_col2 = st.text_input("Título columna 2")
-columna1 = st.text_area("Columna 1 (separe los elementos con salto de línea)", height=250)
-columna2 = st.text_area("Columna 2 (separe los elementos con salto de línea)", height=250)
+class output:
+    solo_col1: list
+    solo_col2: list
+    coincidencias: list
 
-# Conversión de las listas ingresadas a DataFrames de Pandas
-df1 = pd.DataFrame(columna1.split("\n"), columns=[titulo_col1])
-df2 = pd.DataFrame(columna2.split("\n"), columns=[titulo_col2])
+def Comparar_columnas (columna1,columna2)
+    output - output ([], [], [])
+    for elemento in columna1:
+        if elemento not in columna2
+            output.solo_col1.append(elemento)
+    for elemento in columna2:
+        if elemento not in columna1:
+            output.solo_col2.append(elemento)
+        else:
+            output.coincidencias.append(elemento)
+    return output
 
-# Comparación de los elementos de las listas
-coincidencias = []
-for index1, row1 in df1.iterrows():
-    for index2, row2 in df2.iterrows():
-        if row1[titulo_col1] == row2[titulo_col2]:
-            coincidencias.append(row1[titulo_col1])
+output =Comparar_columnas(df[columna1_header], df[columna2_header])
+st.write((" Solo en" + columna1_header),output.solo_col1)
+st.write((" Solo en" + columna2_header),output.solo_col2)
+st.write( "Coincidencias" , output.coincidencias )
 
-# Creación del DataFrame de resultado
-df_resultado = pd.DataFrame({
-    f"Solo en {titulo_col1}": df1.loc[~df1[titulo_col1].isin(df2[titulo_col2]), titulo_col1],
-    f"Solo en {titulo_col2}": df2.loc[~df2[titulo_col2].isin(df1[titulo_col1]), titulo_col2],
-    "Coincidencias": coincidencias
-})
-
-# Exportación del resultado a Excel
-output_excel = px.Workbook()
-hoja_input = output_excel.create_sheet("Input", 0)
-hoja_output = output_excel.create_sheet("Output", 1)
-
-for row_index, row_value in pd.concat([df1, df2], axis=1).iterrows():
-    hoja_input.append([row_value[col] for col in [titulo_col1, titulo_col2]])
-
-hoja_output.append([f"Solo en {titulo_col1}", f"Solo en {titulo_col2}", "Coincidencias"])
-for row_index, row_value in df_resultado.iterrows():
-    hoja_output.append([row_value[col] for col in df_resultado.columns])
-
-# Descarga del archivo generado
-def download_excel_file(df, filename):
-    with open(filename, 'wb') as f:
-        f.write(df)
-    return f
-
-excel_file = download_excel_file(px.writer.excel.save_virtual_workbook(output_excel), f"{titulo_col1}_{titulo_col2}.xlsx")
-st.download_button(label="Descargar resultado", data=excel_file.getvalue(), file_name=f"{titulo_col1}_{titulo_col2}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+with pd.ExcelWriter('output_comparacion.xlsx') as writer:
+    pd.DataFrame({("solo en " + columna1_header ): output.solo_col1}).to_excel(writer, sheet_name='output_comparacion', index=False, startcol=0)
+    pd.DataFrame({("solo en " + columna2_header ): output.solo_col2}).to_excel(writer, sheet_name='output_comparacion', index=False, startcol=1)
+    pd.DataFrame({"Coincidencias": output.coincidencias}).to_excel(writer, sheet_name='output_comparacion', index=False, startcol=2)
