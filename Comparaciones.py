@@ -29,7 +29,7 @@ def Comparar_columnas (columna1,columna2)
             output.solo_col2.append(elemento)
         else:
             output.coincidencias.append(elemento)
-    return output
+            return output
 
 output =Comparar_columnas(df[columna1_header], df[columna2_header])
 st.write((" Solo en" + columna1_header),output.solo_col1)
@@ -40,3 +40,5 @@ with pd.ExcelWriter('output_comparacion.xlsx') as writer:
     pd.DataFrame({("solo en " + columna1_header ): output.solo_col1}).to_excel(writer, sheet_name='output_comparacion', index=False, startcol=0)
     pd.DataFrame({("solo en " + columna2_header ): output.solo_col2}).to_excel(writer, sheet_name='output_comparacion', index=False, startcol=1)
     pd.DataFrame({"Coincidencias": output.coincidencias}).to_excel(writer, sheet_name='output_comparacion', index=False, startcol=2)
+
+
