@@ -19,7 +19,7 @@ class output:
     solo_col2: list
     coincidencias: list
 
-def comparar_columnas (columna1,columna2)
+def comparar_columnas (columna1,columna2):
     output - output ([], [], [])
     for elemento in columna1:
         if elemento not in columna2
