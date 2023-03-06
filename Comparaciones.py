@@ -17,13 +17,13 @@ class Output:
     solo_col2: list
     coincidencias: list
 
-def comparar_columnas(columna1, columna2):
+def comparar_columnas(columna1_lista, columna2_lista):
     output = Output([], [], [])
-    for elemento in columna1:
-        if elemento in columna1 and not in columna2:
+    for elemento in columna1_lista:
+        if elemento not in columna2_lista:
             output.solo_col1.append(elemento)
-    for elemento in columna2:
-        if elemento in columna2 and not in columna1:
+    for elemento in columna2_lista:
+        if elemento not in columna1_lista:
             output.solo_col2.append(elemento)
         else:
             output.coincidencias.append(elemento)
