@@ -22,7 +22,7 @@ class output:
 def comparar_columnas (columna1,columna2):
     output - output ([], [], [])
     for elemento in columna1:
-        if elemento not in columna2
+        if elemento not in columna2:
             output.solo_col1.append(elemento)
     for elemento in columna2:
         if elemento not in columna1:
